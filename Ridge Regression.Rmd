@@ -1,0 +1,132 @@
+---
+title: "Ridge-Regression"
+author: 
+date:
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r message=FALSE, warning=FALSE}
+library(glmnet)
+
+```
+
+
+
+```{r}
+set.seed(120)
+
+n <- 100
+p <- 200
+real_p <- 15
+x <- matrix(rnorm(n*p),nrow=n,ncol=p)
+y <- apply(x[,1:real_p],1,sum) + rnorm(n)
+```
+
+
+
+```{r}
+x.train <- x[1:75,]
+x.test <- x[76:100,]
+
+y.train <- y[1:75]
+y.test <- y[76:100]
+```
+
+
+## Ridge regression optimum lambda selection
+
+
+```{r}
+
+# Generating lambda values
+lambdas <- 10^seq(0,-3,by=-.1)
+
+
+# Cross-validated command , alpha=0 (ridge)
+cvglm <- cv.glmnet(x.train,y.train,alpha=0,lambda = lambdas)
+optlambda <- cvglm$lambda.min
+
+
+```
+
+
+
+```{r}
+plot(cvglm)
+```
+
+### RIDGE REGRESSION MODEL
+
+```{r}
+fit.ridge <- glmnet(x.train,y.train,lambda=optlambda,alpha=0)
+head(coef(fit.ridge),15) # first 15 coefficients
+```
+
+
+### Estimated y values for test data
+
+```{r}
+
+
+y_predicted <- predict(fit.ridge,s=optlambda,newx = as.matrix(x.test))
+y_predicted
+
+
+```
+
+### The R2 criterion can be used to evaluate predicted performance
+
+
+### R2 calculation
+
+```{r}
+rsquare <- function(true,predicted)
+{
+sse <- sum((predicted-true)^2)
+sst<- sum((true-mean(true))^2)
+rsq <- 1-sse/sst
+rsq }
+
+```
+
+### Calculate the value of R SQUARE for the test set using this function
+
+
+```{r}
+
+
+rridge <- rsquare(y.test,y_predicted)
+rridge
+
+```
+
+
+### RMSE(ROOT MEAN SQUARE ERROR) can be used as another performance measure. Related function
+
+```{r}
+
+
+rmse <- function(true,predicted,n)
+{
+  sqrt(sum((true-predicted)^2)/(n-1))
+}
+
+
+```
+
+# Calculating RMSE on Test Set
+
+```{r}
+
+rmseridge <- rmse(y.test,y_predicted,50)
+rmseridge
+
+
+```
+
+
